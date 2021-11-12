@@ -14,6 +14,10 @@ var RELATIVE_LEFT_DOWN_POSITION = Position{Row:1, Column:-1}
 var RELATIVE_LEFT_POSITION = Position{Row:0, Column:-1}
 var RELATIVE_LEFT_UP_POSITION = Position{Row:-1, Column:-1}
 
+func (position *Position) Flip() Position {
+  return Position{Row:position.Column, Column:position.Row}
+}
+
 func (position *Position) IsOutOBoardRange() bool {
   return position.Row < 0 || position.Row > BOARD_ROW_SIZE - 1 || position.Column < 0 || position.Column > BOARD_COLUMN_SIZE - 1
 }
@@ -49,10 +53,33 @@ var BOARD_ALL_POSITIONS = func() Positions {
 }()
 
 var BOARD_FIRST_REGION_POSITIONS = func() Positions {
-  
-}
+  regionRowNum := 3
+  result := make(Positions, regionRowNum * BOARD_COLUMN_SIZE)
+  for i := 0; i < regionRowNum; i++ {
+    for j := 0; j < BOARD_COLUMN_SIZE; j++ {
+      row := i + (BOARD_ROW_SIZE - regionRowNum)
+      position := Position{Row:row, Column:j}
+      result = append(result, position)
+    }
+  }
+  return result
+}()
 
-var BOARD_ENEMY_REGION_POSITIONS = map
+var BOARD_SECOND_REGION_POSITIONS = func() Positions {
+  regionRowNum := 3
+  result := make(Positions, regionRowNum * BOARD_COLUMN_SIZE)
+  for i := 0; i < regionRowNum; i++ {
+    for j := 0; j < BOARD_COLUMN_SIZE; j++ {
+      position := Position{Row:i, Column:j}
+      result = append(result, position)
+    }
+  }
+  return result
+}()
+
+var BOARD_ENEMY_REGION_POSITIONS = map[Turn]Positions{
+  FIRST:BOARD_SECOND_REGION_POSITIONS, SECOND:BOARD_FIRST_REGION_POSITIONS,
+}
 
 var ALL_RELATIVE_UP_POSITIONS = func() Positions {
   result := make(Positions, 0, BOARD_ROW_SIZE)
@@ -140,4 +167,13 @@ func (positions Positions) ReverseTurn() Positions {
     result[i] = position.ReverseTurn()
   }
   return result
+}
+
+func (positions Positions) In(position Position) bool {
+  for _, iPosition := range positions {
+    if iPosition == position {
+      return true
+    }
+  }
+  return false
 }

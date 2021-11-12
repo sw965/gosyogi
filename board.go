@@ -9,63 +9,90 @@ const (
   BOARD_COLUMN_SIZE = 9
 )
 
-type Board [BOARD_ROW_SIZE][BOARD_COLUMN_SIZE]PieceWithTurn
+type Board [BOARD_ROW_SIZE][BOARD_COLUMN_SIZE]Piece
 
 var INIT_BOARD = Board{
-  [BOARD_COLUMN_SIZE]PieceWithTurn{
+  [BOARD_COLUMN_SIZE]Piece{
     SECOND_KYOU, SECOND_KEI, SECOND_GIN, SECOND_KIN, SECOND_GYOKU, SECOND_KIN, SECOND_GIN, SECOND_KEI, SECOND_KYOU,
   },
 
-  [BOARD_COLUMN_SIZE]PieceWithTurn{
-    PieceWithTurn{}, SECOND_HI, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, SECOND_KAKU, PieceWithTurn{},
+  [BOARD_COLUMN_SIZE]Piece{
+    Piece{}, SECOND_HI, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, SECOND_KAKU, Piece{},
   },
 
-  [BOARD_COLUMN_SIZE]PieceWithTurn{
+  [BOARD_COLUMN_SIZE]Piece{
     SECOND_HU, SECOND_HU, SECOND_HU, SECOND_HU, SECOND_HU, SECOND_HU, SECOND_HU, SECOND_HU, SECOND_HU,
   },
 
-  [BOARD_COLUMN_SIZE]PieceWithTurn{
-    PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{},
+  [BOARD_COLUMN_SIZE]Piece{
+    Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{},
   },
 
-  [BOARD_COLUMN_SIZE]PieceWithTurn{
-    PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{},
+  [BOARD_COLUMN_SIZE]Piece{
+    Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{},
   },
 
-  [BOARD_COLUMN_SIZE]PieceWithTurn{
-    PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{},
+  [BOARD_COLUMN_SIZE]Piece{
+    Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, Piece{},
   },
 
-  [BOARD_COLUMN_SIZE]PieceWithTurn{
+  [BOARD_COLUMN_SIZE]Piece{
     FIRST_HU, FIRST_HU, FIRST_HU, FIRST_HU, FIRST_HU, FIRST_HU, FIRST_HU, FIRST_HU, FIRST_HU,
   },
 
-  [BOARD_COLUMN_SIZE]PieceWithTurn{
-    PieceWithTurn{}, FIRST_KAKU, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, PieceWithTurn{}, FIRST_HI, PieceWithTurn{},
+  [BOARD_COLUMN_SIZE]Piece{
+    Piece{}, FIRST_KAKU, Piece{}, Piece{}, Piece{}, Piece{}, Piece{}, FIRST_HI, Piece{},
   },
 
-  [BOARD_COLUMN_SIZE]PieceWithTurn{
+  [BOARD_COLUMN_SIZE]Piece{
     FIRST_KYOU, FIRST_KEI, FIRST_GIN, FIRST_KIN, FIRST_OU, FIRST_KIN, FIRST_GIN, FIRST_KEI, FIRST_KYOU,
   },
 }
 
 var INIT_BOARD_PIECE_NUM = func() int {
   result := 0
-  empty := PieceWithTurn{}
+  empty := Piece{}
   for _, position := range BOARD_ALL_POSITIONS {
-    pieceWithTurn := INIT_BOARD[position.Row][position.Column]
-    if pieceWithTurn != empty {
+    piece := INIT_BOARD[position.Row][position.Column]
+    if piece != empty {
       result += 1
     }
   }
   return result
 }()
 
+func (board *Board) Transpose() Board {
+  result := Board{}
+  for _, position := range BOARD_ALL_POSITIONS {
+    p := position.Flip()
+    result[p.Row][p.Column] = board[position.Row][position.Column]
+  }
+  return result
+}
+
+func (board *Board) InHu() []bool {
+  result := make([]bool, BOARD_COLUMN_SIZE)
+
+  inHu := func(pieces [BOARD_COLUMN_SIZE]Piece) bool {
+    for _, piece := range pieces {
+      if piece.Name == HU {
+        return true
+      }
+    }
+    return false
+  }
+
+  for i, pieces := range board.Transpose() {
+    result[i] = inHu(pieces)
+  }
+  return result
+}
+
 func (board *Board) NewSelfTurnPositions(turn Turn) Positions {
   result := make(Positions, 0, INIT_BOARD_PIECE_NUM / 2)
   for _, position := range BOARD_ALL_POSITIONS {
-    pieceWithTurn := board[position.Row][position.Column]
-    if pieceWithTurn.Turn == turn {
+    piece := board[position.Row][position.Column]
+    if piece.Turn == turn {
       result = append(result, position)
     }
   }
@@ -75,11 +102,11 @@ func (board *Board) NewSelfTurnPositions(turn Turn) Positions {
 func (board Board) NewLegalMoves(turn Turn) Moves {
   result := Moves{}
   selfTurnPositions := board.NewSelfTurnPositions(turn)
+  enemyRegionPositions := BOARD_ENEMY_REGION_POSITIONS[turn]
 
   for _, sp := range selfTurnPositions {
-    pieceWithTurn := board[sp.Row][sp.Column]
-    pieceName := pieceWithTurn.Piece.Name
-    byDirectionRelativeMovePositions := *PIECE_NAME_TO_BY_DIRECTION_RELATIVE_MOVE_POSITIONS[pieceWithTurn.Piece.Name]
+    piece := board[sp.Row][sp.Column]
+    byDirectionRelativeMovePositions := *PIECE_NAME_TO_BY_DIRECTION_RELATIVE_MOVE_POSITIONS[piece.Name]
     if turn == SECOND {
       byDirectionRelativeMovePositions = byDirectionRelativeMovePositions.ReverseTurn()
     }
@@ -90,16 +117,27 @@ func (board Board) NewLegalMoves(turn Turn) Moves {
           break
         }
 
+        //自分の駒にぶつかったら
         if board[positionAfterMove.Row][positionAfterMove.Column].Turn == turn {
           break
         }
 
+        canPromotion := CAN_PROMOTION[piece.Name] && (enemyRegionPositions.In(sp) || enemyRegionPositions.In(positionAfterMove))
+
+        //相手の駒にぶつかったら
         if board[positionAfterMove.Row][positionAfterMove.Column].Turn == REVERSE_TURN[turn] {
-          result = append(result, Move{PieceName:pieceName, BeforePosition:sp, AfterPosition:positionAfterMove})
+          result = append(result, Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:false})
+          if canPromotion {
+            result = append(result, Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:true})
+          }
           break
         }
 
-        result = append(result, Move{PieceName:pieceName, BeforePosition:sp, AfterPosition:positionAfterMove})
+        //駒にぶつからなかったら
+        result = append(result, Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:false})
+        if canPromotion {
+          result = append(result, Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:true})
+        }
       }
     }
   }
@@ -125,6 +163,5 @@ func (board *Board) PrintSimple() {
     fmt.Println(ele)
   }
 }
-
 
 type Boards []Board
