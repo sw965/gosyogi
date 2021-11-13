@@ -11,8 +11,39 @@ func NewAspect() Aspect {
   return Aspect{Board:INIT_BOARD, EachTurnCapturedPieceNames:EachTurnCapturedPieceNames{}, Turn:FIRST, History:Boards{}}
 }
 
-func (aspect Aspect) LegalMoves() Moves {
-  return Moves{}
+func (aspect Aspect) NewLegalMoves() Moves {
+  isNihu := aspect.Board.IsNiHu()
+  filter := func(position Position) bool {
+    pieceName := aspect.Board[position.Row][position.Column].Name
+
+    if pieceName != "" {
+      return false
+    }
+
+    if isNihu[position.Column] && pieceName == HU {
+      return false
+    }
+
+    foulPositions, existsFoulPos := FOUL_POSITIONS[aspect.Turn][pieceName]
+
+    if existsFoulPos && foulPositions.In(position) {
+      return false
+    }
+
+    return true
+  }
+
+  capturedPieceNames := aspect.EachTurnCapturedPieceNames[aspect.Turn]
+  result := make(Moves, 0, len(capturedPieceNames) * BOARD_ROW_SIZE * BOARD_COLUMN_SIZE)
+  for _, pieceName := range capturedPieceNames {
+    for _, position := range BOARD_ALL_POSITIONS {
+      move := Move{PieceName:pieceName, BeforePosition:CAPTURED_PIECE_POSITION, AfterPosition:position}
+      if filter(position) {
+        result = append(result, move)
+      }
+    }
+  }
+  return result.Add(aspect.Board.NewLegalMoves(aspect.Turn))
 }
 
 func (aspect Aspect) Put(move *Move) (Aspect, error) {

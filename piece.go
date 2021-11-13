@@ -35,23 +35,25 @@ var CAN_PROMOTION = map[PieceName]bool{
   OU:false, GYOKU:false,
 }
 
-var PIECE_NAME_TO_NORMAL_PIECE_NAMES = map[PieceName]PieceName{
-  HU:HU, HI:HI, KAKU:KAKU,
-  KIN:KIN, GIN:GIN, KEI:KEI, KYOU:KYOU,
+var (
+  PIECE_NAME_TO_NORMAL_PIECE_NAMES = map[PieceName]PieceName{
+    HU:HU, HI:HI, KAKU:KAKU,
+    KIN:KIN, GIN:GIN, KEI:KEI, KYOU:KYOU,
 
-  TO:HU, RYUU:HI, UMA:KAKU,
-  NARI_GIN:GIN, NARI_KEI:KEI, NARI_KYOU:KYOU,
-  OU:OU, GYOKU:GYOKU,
-}
+    TO:HU, RYUU:HI, UMA:KAKU,
+    NARI_GIN:GIN, NARI_KEI:KEI, NARI_KYOU:KYOU,
+    OU:OU, GYOKU:GYOKU,
+  }
 
-var PIECE_NAME_TO_PROMOTION_PIECE_NAMES = map[PieceName]PieceName{
-  HU:TO, HI:RYUU, KAKU:UMA,
-  KIN:KIN, GIN:NARI_GIN, KEI:NARI_KEI, KYOU:NARI_KYOU,
+  PIECE_NAME_TO_PROMOTION_PIECE_NAMES = map[PieceName]PieceName{
+    HU:TO, HI:RYUU, KAKU:UMA,
+    KIN:KIN, GIN:NARI_GIN, KEI:NARI_KEI, KYOU:NARI_KYOU,
 
-  TO:TO, RYUU:RYUU, UMA:UMA,
-  NARI_GIN:NARI_GIN, NARI_KEI:NARI_KEI, NARI_KYOU:NARI_KYOU,
-  OU:OU, GYOKU:GYOKU,
-}
+    TO:TO, RYUU:RYUU, UMA:UMA,
+    NARI_GIN:NARI_GIN, NARI_KEI:NARI_KEI, NARI_KYOU:NARI_KYOU,
+    OU:OU, GYOKU:GYOKU,
+  }
+)
 
 var PIECE_NAME_TO_BY_DIRECTION_RELATIVE_MOVE_POSITIONS = map[PieceName]*ByDirectionPositions{
   HU:&HU_BY_DIRECTION_RELATIVE_MOVE_POSITIONS,
@@ -74,6 +76,17 @@ var PIECE_NAME_TO_BY_DIRECTION_RELATIVE_MOVE_POSITIONS = map[PieceName]*ByDirect
 }
 
 type PieceNames []PieceName
+
+var PIECE_NAMES_OF_MOVE_FORWARD_ONLY = PieceNames{HU, KEI, KYOU}
+
+func (pieceNames PieceNames) In(pieceName PieceName) bool {
+  for _, iPieceName := range pieceNames {
+    if iPieceName == pieceName {
+      return true
+    }
+  }
+  return false
+}
 
 func (pieceNames PieceNames) Remove(pieceName PieceName) (PieceNames, error) {
   result := make(PieceNames, 0, len(pieceNames) - 1)
@@ -99,37 +112,39 @@ type Piece struct {
   Turn Turn
 }
 
-var FIRST_HU = Piece{Name:HU, Turn:FIRST}
-var FIRST_HI = Piece{Name:HI, Turn:FIRST}
-var FIRST_KAKU = Piece{Name:KAKU, Turn:FIRST}
-var FIRST_KIN = Piece{Name:KIN, Turn:FIRST}
-var FIRST_GIN = Piece{Name:GIN, Turn:FIRST}
-var FIRST_KEI = Piece{Name:KEI, Turn:FIRST}
-var FIRST_KYOU = Piece{Name:KYOU, Turn:FIRST}
+var (
+  FIRST_HU = Piece{Name:HU, Turn:FIRST}
+  FIRST_HI = Piece{Name:HI, Turn:FIRST}
+  FIRST_KAKU = Piece{Name:KAKU, Turn:FIRST}
+  FIRST_KIN = Piece{Name:KIN, Turn:FIRST}
+  FIRST_GIN = Piece{Name:GIN, Turn:FIRST}
+  FIRST_KEI = Piece{Name:KEI, Turn:FIRST}
+  FIRST_KYOU = Piece{Name:KYOU, Turn:FIRST}
 
-var FIRST_TO = Piece{Name:TO, Turn:FIRST}
-var FIRST_RYUU = Piece{Name:RYUU, Turn:FIRST}
-var FIRST_UMA = Piece{Name:UMA, Turn:FIRST}
-var FIRST_NARI_GIN = Piece{Name:NARI_GIN, Turn:FIRST}
-var FIRST_NARI_KEI = Piece{Name:NARI_KEI, Turn:FIRST}
-var FIRST_NARI_KYOU = Piece{Name:NARI_KYOU, Turn:FIRST}
-var FIRST_OU = Piece{Name:OU, Turn:FIRST}
+  FIRST_TO = Piece{Name:TO, Turn:FIRST}
+  FIRST_RYUU = Piece{Name:RYUU, Turn:FIRST}
+  FIRST_UMA = Piece{Name:UMA, Turn:FIRST}
+  FIRST_NARI_GIN = Piece{Name:NARI_GIN, Turn:FIRST}
+  FIRST_NARI_KEI = Piece{Name:NARI_KEI, Turn:FIRST}
+  FIRST_NARI_KYOU = Piece{Name:NARI_KYOU, Turn:FIRST}
+  FIRST_OU = Piece{Name:OU, Turn:FIRST}
 
-var SECOND_HU = FIRST_HU.ReverseTurn()
-var SECOND_HI = FIRST_HI.ReverseTurn()
-var SECOND_KAKU = FIRST_KAKU.ReverseTurn()
-var SECOND_KIN = FIRST_KIN.ReverseTurn()
-var SECOND_GIN = FIRST_GIN.ReverseTurn()
-var SECOND_KEI = FIRST_KEI.ReverseTurn()
-var SECOND_KYOU = FIRST_KYOU.ReverseTurn()
+  SECOND_HU = FIRST_HU.ReverseTurn()
+  SECOND_HI = FIRST_HI.ReverseTurn()
+  SECOND_KAKU = FIRST_KAKU.ReverseTurn()
+  SECOND_KIN = FIRST_KIN.ReverseTurn()
+  SECOND_GIN = FIRST_GIN.ReverseTurn()
+  SECOND_KEI = FIRST_KEI.ReverseTurn()
+  SECOND_KYOU = FIRST_KYOU.ReverseTurn()
 
-var SECOND_TO = FIRST_TO.ReverseTurn()
-var SECOND_RYUU = FIRST_RYUU.ReverseTurn()
-var SECOND_UMA = FIRST_UMA.ReverseTurn()
-var SECOND_NARI_GIN = FIRST_NARI_GIN.ReverseTurn()
-var SECOND_NARI_KEI = FIRST_NARI_KEI.ReverseTurn()
-var SECOND_NARI_KYOU = FIRST_NARI_KYOU.ReverseTurn()
-var SECOND_GYOKU = Piece{Name:GYOKU, Turn:SECOND}
+  SECOND_TO = FIRST_TO.ReverseTurn()
+  SECOND_RYUU = FIRST_RYUU.ReverseTurn()
+  SECOND_UMA = FIRST_UMA.ReverseTurn()
+  SECOND_NARI_GIN = FIRST_NARI_GIN.ReverseTurn()
+  SECOND_NARI_KEI = FIRST_NARI_KEI.ReverseTurn()
+  SECOND_NARI_KYOU = FIRST_NARI_KYOU.ReverseTurn()
+  SECOND_GYOKU = Piece{Name:GYOKU, Turn:SECOND}
+)
 
 func (piece *Piece) ReverseTurn() Piece {
   return Piece{Name:piece.Name, Turn:REVERSE_TURN[piece.Turn]}

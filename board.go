@@ -70,7 +70,7 @@ func (board *Board) Transpose() Board {
   return result
 }
 
-func (board *Board) InHu() []bool {
+func (board *Board) IsNiHu() []bool {
   result := make([]bool, BOARD_COLUMN_SIZE)
 
   inHu := func(pieces [BOARD_COLUMN_SIZE]Piece) bool {
@@ -123,20 +123,29 @@ func (board Board) NewLegalMoves(turn Turn) Moves {
         }
 
         canPromotion := CAN_PROMOTION[piece.Name] && (enemyRegionPositions.In(sp) || enemyRegionPositions.In(positionAfterMove))
+        foulPositions, existsFoulPos := FOUL_POSITIONS[turn][piece.Name]
+        noPromotionMove := Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:false}
+        promotionMove := Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:true}
 
         //相手の駒にぶつかったら
         if board[positionAfterMove.Row][positionAfterMove.Column].Turn == REVERSE_TURN[turn] {
-          result = append(result, Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:false})
+          //歩・桂・香が成らないと禁じ手になる場合
+          if existsFoulPos && foulPositions.In(positionAfterMove) {
+            result = append(result, promotionMove)
+            break
+          }
+
+          result = append(result, noPromotionMove)
           if canPromotion {
-            result = append(result, Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:true})
+            result = append(result, promotionMove)
           }
           break
         }
 
         //駒にぶつからなかったら
-        result = append(result, Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:false})
+        result = append(result, noPromotionMove)
         if canPromotion {
-          result = append(result, Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:true})
+          result = append(result, promotionMove)
         }
       }
     }

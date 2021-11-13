@@ -28,4 +28,20 @@ func TestNewLegalMoves(t *testing.T) {
   }
   aspect.Board.PrintSimple()
   fmt.Println(aspect.EachTurnCapturedPieceNames[FIRST])
+
+  for _, move := range aspect.NewLegalMoves() {
+    fmt.Println(move)
+  }
+
+  move = Move{BeforePosition:Position{Row:0, Column:6}, AfterPosition:Position{Row:1, Column:7}, IsPromotion:false}
+  aspect, err = aspect.Put(&move)
+  if err != nil {
+    panic(err)
+  }
+  aspect.Board.PrintSimple()
+  fmt.Println(aspect.EachTurnCapturedPieceNames[SECOND])
+
+  for _, move := range aspect.NewLegalMoves() {
+    fmt.Println(move)
+  }  
 }

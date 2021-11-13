@@ -14,4 +14,14 @@ func TestAllPositionsPrint(t *testing.T) {
   fmt.Println("ALL_LEFT_DOWN_POSITIONS = ", ALL_RELATIVE_LEFT_DOWN_POSITIONS)
   fmt.Println("ALL_LEFT_POSITIONS = ", ALL_RELATIVE_LEFT_POSITIONS)
   fmt.Println("ALL_LEFT_UP_POSITIONS = ", ALL_RELATIVE_LEFT_UP_POSITIONS)
+
+  foulPositions := FOUL_POSITIONS[FIRST]
+  for pieceName, position := range foulPositions {
+    fmt.Println(pieceName, position)
+  }
+
+  foulPositions = FOUL_POSITIONS[SECOND]
+  for pieceName, position := range foulPositions {
+    fmt.Println(pieceName, position)
+  }
 }
