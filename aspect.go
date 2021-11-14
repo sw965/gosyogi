@@ -13,7 +13,7 @@ func NewAspect() Aspect {
 
 func (aspect Aspect) NewLegalMoves() Moves {
   isNihu := aspect.Board.IsNiHu()
-  filter := func(position Position) bool {
+  handMoveFilter := func(position Position, move *Move) bool {
     pieceName := aspect.Board[position.Row][position.Column].Name
 
     if pieceName != "" {
@@ -34,16 +34,32 @@ func (aspect Aspect) NewLegalMoves() Moves {
   }
 
   capturedPieceNames := aspect.EachTurnCapturedPieceNames[aspect.Turn]
-  result := make(Moves, 0, len(capturedPieceNames) * BOARD_ROW_SIZE * BOARD_COLUMN_SIZE)
+  boardLegalMoves := aspect.Board.NewLegalMoves(aspect.Turn)
+  handLegalMoves := make(Moves, 0, len(capturedPieceNames) * BOARD_ROW_SIZE * BOARD_COLUMN_SIZE)
+
   for _, pieceName := range capturedPieceNames {
     for _, position := range BOARD_ALL_POSITIONS {
       move := Move{PieceName:pieceName, BeforePosition:CAPTURED_PIECE_POSITION, AfterPosition:position}
-      if filter(position) {
-        result = append(result, move)
+      if handMoveFilter(position, &move) {
+        handLegalMoves = append(handLegalMoves, move)
       }
     }
   }
-  return result.Add(aspect.Board.NewLegalMoves(aspect.Turn))
+
+  handAndBoardLegalMoves := boardLegalMoves.Add(handLegalMoves)
+  result := make(Moves, 0, len(handAndBoardLegalMoves))
+
+  for _, move := range handAndBoardLegalMoves {
+    tmpAspect, err := aspect.Put(&move)
+    if err != nil {
+      panic(err)
+    }
+
+    if !tmpAspect.Board.IsCheck(aspect.Turn) {
+      result = append(result, move)
+    }
+  }
+  return result
 }
 
 func (aspect Aspect) Put(move *Move) (Aspect, error) {
@@ -53,11 +69,11 @@ func (aspect Aspect) Put(move *Move) (Aspect, error) {
   aspect.EachTurnCapturedPieceNames = aspect.EachTurnCapturedPieceNames.Copy()
 
   if positionBeforeMove.IsCapturedPiece() {
-    newEachTurnCapturedPieceNames, err := aspect.EachTurnCapturedPieceNames[turn].Remove(move.PieceName)
+    capturedPieceNames, err := aspect.EachTurnCapturedPieceNames[turn].Remove(move.PieceName)
     if err != nil {
       return Aspect{}, err
     }
-    aspect.EachTurnCapturedPieceNames[turn] = newEachTurnCapturedPieceNames
+    aspect.EachTurnCapturedPieceNames[turn] = capturedPieceNames
     aspect.Board[positionAfterMove.Row][positionAfterMove.Column] = Piece{Name:move.PieceName, Turn:turn}
   } else {
     movePiece := aspect.Board[positionBeforeMove.Row][positionBeforeMove.Column]

@@ -92,7 +92,7 @@ func (pieceNames PieceNames) Remove(pieceName PieceName) (PieceNames, error) {
   result := make(PieceNames, 0, len(pieceNames) - 1)
   ok := false
   for _, iPieceName := range pieceNames {
-    if iPieceName == pieceName {
+    if iPieceName == pieceName && !ok {
       ok = true
       continue
     }

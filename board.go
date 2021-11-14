@@ -88,7 +88,7 @@ func (board *Board) IsNiHu() []bool {
   return result
 }
 
-func (board *Board) NewSelfTurnPositions(turn Turn) Positions {
+func (board *Board) NewTurnPositions(turn Turn) Positions {
   result := make(Positions, 0, INIT_BOARD_PIECE_NUM / 2)
   for _, position := range BOARD_ALL_POSITIONS {
     piece := board[position.Row][position.Column]
@@ -99,36 +99,38 @@ func (board *Board) NewSelfTurnPositions(turn Turn) Positions {
   return result
 }
 
-func (board Board) NewLegalMoves(turn Turn) Moves {
+func (board *Board) NewLegalMoves(turn Turn) Moves {
   result := Moves{}
-  selfTurnPositions := board.NewSelfTurnPositions(turn)
   enemyRegionPositions := BOARD_ENEMY_REGION_POSITIONS[turn]
 
-  for _, sp := range selfTurnPositions {
-    piece := board[sp.Row][sp.Column]
+  for _, tp := range board.NewTurnPositions(turn) {
+    piece := board[tp.Row][tp.Column]
     byDirectionRelativeMovePositions := *PIECE_NAME_TO_BY_DIRECTION_RELATIVE_MOVE_POSITIONS[piece.Name]
     if turn == SECOND {
       byDirectionRelativeMovePositions = byDirectionRelativeMovePositions.ReverseTurn()
     }
     for _, bdrmps := range byDirectionRelativeMovePositions.ToSlice() {
       for _, bdrmp := range bdrmps {
-        positionAfterMove := sp.Add(&bdrmp)
+        positionAfterMove := tp.Add(&bdrmp)
+
+        //ボードの範囲外に出たら
         if positionAfterMove.IsOutOBoardRange() {
           break
         }
+        movePosPiece := board[positionAfterMove.Row][positionAfterMove.Column]
 
         //自分の駒にぶつかったら
-        if board[positionAfterMove.Row][positionAfterMove.Column].Turn == turn {
+        if movePosPiece.Turn == turn {
           break
         }
 
-        canPromotion := CAN_PROMOTION[piece.Name] && (enemyRegionPositions.In(sp) || enemyRegionPositions.In(positionAfterMove))
+        canPromotion := CAN_PROMOTION[piece.Name] && (enemyRegionPositions.In(tp) || enemyRegionPositions.In(positionAfterMove))
         foulPositions, existsFoulPos := FOUL_POSITIONS[turn][piece.Name]
-        noPromotionMove := Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:false}
-        promotionMove := Move{PieceName:piece.Name, BeforePosition:sp, AfterPosition:positionAfterMove, IsPromotion:true}
+        noPromotionMove := Move{PieceName:piece.Name, BeforePosition:tp, AfterPosition:positionAfterMove, IsPromotion:false}
+        promotionMove := Move{PieceName:piece.Name, BeforePosition:tp, AfterPosition:positionAfterMove, IsPromotion:true}
 
         //相手の駒にぶつかったら
-        if board[positionAfterMove.Row][positionAfterMove.Column].Turn == REVERSE_TURN[turn] {
+        if movePosPiece.Turn == REVERSE_TURN[turn] {
           //歩・桂・香が成らないと禁じ手になる場合
           if existsFoulPos && foulPositions.In(positionAfterMove) {
             result = append(result, promotionMove)
@@ -151,6 +153,42 @@ func (board Board) NewLegalMoves(turn Turn) Moves {
     }
   }
   return result
+}
+
+func (board *Board) IsCheck(currentTurn Turn) bool {
+  rTurn := REVERSE_TURN[currentTurn]
+  for _, rtp := range board.NewTurnPositions(rTurn) {
+    piece := board[rtp.Row][rtp.Column]
+    byDirectionRelativeMovePositions := *PIECE_NAME_TO_BY_DIRECTION_RELATIVE_MOVE_POSITIONS[piece.Name]
+    if rTurn == SECOND {
+      byDirectionRelativeMovePositions = byDirectionRelativeMovePositions.ReverseTurn()
+    }
+    for _, bdrmps := range byDirectionRelativeMovePositions.ToSlice() {
+      for _, bdrmp := range bdrmps {
+        positionAfterMove := rtp.Add(&bdrmp)
+
+        //ボードの範囲外に出たら
+        if positionAfterMove.IsOutOBoardRange() {
+          break
+        }
+        movePosPiece := board[positionAfterMove.Row][positionAfterMove.Column]
+
+        //相手の駒が相手自身の駒にぶつかったら
+        if movePosPiece.Turn == rTurn {
+          break
+        }
+
+        //相手の駒が自分の駒にぶつかったら
+        if movePosPiece.Turn == currentTurn {
+          if movePosPiece.Name == TURN_TO_KING[currentTurn] {
+            return true
+          }
+          break
+        }
+      }
+    }
+  }
+  return false
 }
 
 func (board *Board) ToSimple() [][]string {
