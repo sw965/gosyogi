@@ -1,5 +1,9 @@
 package gosyogi
 
+import (
+  "math/rand"
+)
+
 type Move struct {
   PieceName PieceName
   BeforePosition Position
@@ -28,4 +32,9 @@ func (moves1 Moves) Add(moves2 Moves) Moves {
     result = append(result, move)
   }
   return result
+}
+
+func (moves Moves) RandomChoice(random *rand.Rand) Move {
+  index := random.Intn(len(moves))
+  return moves[index]
 }

@@ -79,15 +79,6 @@ type PieceNames []PieceName
 
 var PIECE_NAMES_OF_MOVE_FORWARD_ONLY = PieceNames{HU, KEI, KYOU}
 
-func (pieceNames PieceNames) In(pieceName PieceName) bool {
-  for _, iPieceName := range pieceNames {
-    if iPieceName == pieceName {
-      return true
-    }
-  }
-  return false
-}
-
 func (pieceNames PieceNames) Remove(pieceName PieceName) (PieceNames, error) {
   result := make(PieceNames, 0, len(pieceNames) - 1)
   ok := false

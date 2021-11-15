@@ -48,6 +48,11 @@ func TestNewLegalMoves(t *testing.T) {
   move = Move{BeforePosition:CAPTURED_PIECE_POSITION, AfterPosition:Position{Row:4, Column:8}, PieceName:KAKU}
   aspect = Helper(aspect, &move)
 
-  move = Move{BeforePosition:Position{Row:0, Column:0}, AfterPosition:Position{Row:1, Column:0}, PieceName:KYOU}
+  move = Move{BeforePosition:Position{Row:0, Column:4}, AfterPosition:Position{Row:1, Column:4}, PieceName:GYOKU}
   aspect = Helper(aspect, &move)
+
+  board := aspect.Board.Transpose()
+  board.PrintSimple()
+  fmt.Println(board.IsNiHu(FIRST))
+  fmt.Println(board.IsNiHu(SECOND))
 }

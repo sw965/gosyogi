@@ -3,6 +3,9 @@ package gosyogi
 import (
   "testing"
   "fmt"
+  "time"
+  "math/rand"
+  "github.com/seehuhn/mt19937"
 )
 
 func TestAllPositionsPrint(t *testing.T) {
@@ -24,4 +27,23 @@ func TestAllPositionsPrint(t *testing.T) {
   for pieceName, position := range foulPositions {
     fmt.Println(pieceName, position)
   }
+
+  mtRandom := rand.New(mt19937.New())
+  mtRandom.Seed(time.Now().UnixNano())
+
+  for i:= 0; i < 64; i++ {
+    aspect := NewAspect()
+    players := Players{FIRST:NewRandomPlayer(mtRandom), SECOND:NewRandomPlayer(mtRandom)}
+    gameEndAspect, err := players.OneGame(aspect)
+    if err != nil {
+      panic(err)
+    }
+    gameEndAspect.Board.PrintSimple()
+    fmt.Println(gameEndAspect.Turn)
+    fmt.Println(len(gameEndAspect.History))
+    fmt.Println(gameEndAspect.EachTurnCapturedPieceNames[FIRST])
+    fmt.Println(gameEndAspect.EachTurnCapturedPieceNames[SECOND])
+  }
+  //board := gameEndAspect.Board.Transpose()
+  //board.PrintSimple()
 }

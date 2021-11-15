@@ -64,18 +64,17 @@ var INIT_BOARD_PIECE_NUM = func() int {
 func (board *Board) Transpose() Board {
   result := Board{}
   for _, position := range BOARD_ALL_POSITIONS {
-    p := position.Flip()
-    result[p.Row][p.Column] = board[position.Row][position.Column]
+    result[position.Row][position.Column] = board[position.Column][position.Row]
   }
   return result
 }
 
-func (board *Board) IsNiHu() []bool {
+func (board *Board) IsNiHu(turn Turn) []bool {
   result := make([]bool, BOARD_COLUMN_SIZE)
 
   inHu := func(pieces [BOARD_COLUMN_SIZE]Piece) bool {
     for _, piece := range pieces {
-      if piece.Name == HU {
+      if piece.Name == HU && piece.Turn == turn {
         return true
       }
     }
@@ -99,6 +98,27 @@ func (board *Board) NewTurnPositions(turn Turn) Positions {
   return result
 }
 
+func (board *Board) NewKingPosition(turn Turn) Position {
+  king := TURN_TO_KING[turn]
+  for _, position := range BOARD_ALL_POSITIONS {
+    if board[position.Row][position.Column].Name == king {
+      return position
+    }
+  }
+  return Position{}
+}
+
+func (board *Board) NewKingHeadPosition(turn Turn) Position {
+  kingPosition := board.NewKingPosition(turn)
+  if turn == FIRST {
+    return kingPosition.Add(&RELATIVE_UP_POSITION)
+  } else {
+    relativeUpPosition := RELATIVE_UP_POSITION.ReverseTurn()
+    return kingPosition.Add(&relativeUpPosition)
+  }
+}
+
+//自らが王を取られに行く手や王手放置の反則は考慮していない
 func (board *Board) NewLegalMoves(turn Turn) Moves {
   result := Moves{}
   enemyRegionPositions := BOARD_ENEMY_REGION_POSITIONS[turn]
@@ -145,9 +165,14 @@ func (board *Board) NewLegalMoves(turn Turn) Moves {
         }
 
         //駒にぶつからなかったら
-        result = append(result, noPromotionMove)
-        if canPromotion {
+        //歩・桂・香が成らないと禁じ手になる場合
+        if existsFoulPos && foulPositions.In(positionAfterMove) {
           result = append(result, promotionMove)
+        } else {
+          result = append(result, noPromotionMove)
+          if canPromotion {
+            result = append(result, promotionMove)
+          }
         }
       }
     }
