@@ -22,8 +22,8 @@ func Helper(aspect Aspect, move *Move) Aspect {
   }
   aspect.Board.PrintSimple()
   fmt.Println(aspect.Turn)
-  fmt.Println("先手", aspect.EachTurnCapturedPieceNames[FIRST])
-  fmt.Println("後手", aspect.EachTurnCapturedPieceNames[SECOND])
+  fmt.Println("先手", aspect.CapturedPieces[FIRST])
+  fmt.Println("後手", aspect.CapturedPieces[SECOND])
   fmt.Println("isCheckBoard1", aspect.Board.IsCheck(aspect.Turn))
   fmt.Println("isCheckBoard2", aspect.Board.IsCheck(REVERSE_TURN[aspect.Turn]))
   fmt.Println("")

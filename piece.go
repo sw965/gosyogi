@@ -1,9 +1,5 @@
 package gosyogi
 
-import (
-  "fmt"
-)
-
 type PieceName string
 
 const (
@@ -36,7 +32,7 @@ var CAN_PROMOTION = map[PieceName]bool{
 }
 
 var (
-  PIECE_NAME_TO_NORMAL_PIECE_NAMES = map[PieceName]PieceName{
+  PIECE_NAME_TO_NORMAL_PIECE_NAME = map[PieceName]PieceName{
     HU:HU, HI:HI, KAKU:KAKU,
     KIN:KIN, GIN:GIN, KEI:KEI, KYOU:KYOU,
 
@@ -45,7 +41,7 @@ var (
     OU:OU, GYOKU:GYOKU,
   }
 
-  PIECE_NAME_TO_PROMOTION_PIECE_NAMES = map[PieceName]PieceName{
+  PIECE_NAME_TO_PROMOTION_PIECE_NAME = map[PieceName]PieceName{
     HU:TO, HI:RYUU, KAKU:UMA,
     KIN:KIN, GIN:NARI_GIN, KEI:NARI_KEI, KYOU:NARI_KYOU,
 
@@ -73,29 +69,6 @@ var PIECE_NAME_TO_BY_DIRECTION_RELATIVE_MOVE_POSITIONS = map[PieceName]*ByDirect
 
   OU:&OU_BY_DIRECTION_RELATIVE_MOVE_POSITIONS,
   GYOKU:&GYOKU_BY_DIRECTION_RELATIVE_MOVE_POSITIONS,
-}
-
-type PieceNames []PieceName
-
-var PIECE_NAMES_OF_MOVE_FORWARD_ONLY = PieceNames{HU, KEI, KYOU}
-
-func (pieceNames PieceNames) Remove(pieceName PieceName) (PieceNames, error) {
-  result := make(PieceNames, 0, len(pieceNames) - 1)
-  ok := false
-  for _, iPieceName := range pieceNames {
-    if iPieceName == pieceName && !ok {
-      ok = true
-      continue
-    }
-    result = append(result, iPieceName)
-  }
-
-  if ok {
-    return result, nil
-  } else {
-    errMsg := fmt.Sprintf("%vはPieceNamesの中には存在しなかった", pieceName)
-    return result, fmt.Errorf(errMsg)
-  }
 }
 
 type Piece struct {
@@ -153,12 +126,39 @@ func (piece *Piece) ToSimple() string {
   return turnMark + string(piece.Name)
 }
 
-type EachTurnCapturedPieceNames map[Turn]PieceNames
+type CapturedPieces map[Turn]map[PieceName]int
 
-func (eachTurnCapturedPieceNames EachTurnCapturedPieceNames) Copy() EachTurnCapturedPieceNames {
-  result := EachTurnCapturedPieceNames{}
-  for turn, pieceNames := range eachTurnCapturedPieceNames {
-    result[turn] = pieceNames
+func NewCapturedPieces() CapturedPieces {
+  turns := []Turn{FIRST, SECOND}
+  pieceNames := []PieceName{HU, HI, KAKU, KIN, GIN, KEI, KYOU}
+  result := CapturedPieces{}
+  for _, turn := range turns {
+    result[turn] = map[PieceName]int{}
+    for _, pieceName := range pieceNames {
+      result[turn][pieceName] = 0
+    }
+  }
+  return result
+}
+
+func (capturedPieces1 CapturedPieces) Equal(capturedPieces2 CapturedPieces) bool {
+  for turn, v := range capturedPieces1 {
+    for pieceName, count := range v {
+      if capturedPieces2[turn][pieceName] != count {
+        return false
+      }
+    }
+  }
+  return true
+}
+
+func (capturedPieces CapturedPieces) Copy() CapturedPieces {
+  result := CapturedPieces{}
+  for turn, v := range capturedPieces {
+    result[turn] = map[PieceName]int{}
+    for pieceName, count := range v {
+      result[turn][pieceName] = count
+    }
   }
   return result
 }

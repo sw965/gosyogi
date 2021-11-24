@@ -41,8 +41,8 @@ func TestAllPositionsPrint(t *testing.T) {
     gameEndAspect.Board.PrintSimple()
     fmt.Println(gameEndAspect.Turn)
     fmt.Println(len(gameEndAspect.History))
-    fmt.Println(gameEndAspect.EachTurnCapturedPieceNames[FIRST])
-    fmt.Println(gameEndAspect.EachTurnCapturedPieceNames[SECOND])
+    fmt.Println(gameEndAspect.CapturedPieces[FIRST])
+    fmt.Println(gameEndAspect.CapturedPieces[SECOND])
   }
   //board := gameEndAspect.Board.Transpose()
   //board.PrintSimple()

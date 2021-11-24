@@ -61,6 +61,17 @@ var INIT_BOARD_PIECE_NUM = func() int {
   return result
 }()
 
+func (board1 *Board) Equal(board2 *Board) bool {
+  for _, position := range BOARD_ALL_POSITIONS {
+    row := position.Row
+    column := position.Column
+    if board1[row][column] != board2[row][column] {
+      return false
+    }
+  }
+  return true
+}
+
 func (board *Board) Transpose() Board {
   result := Board{}
   for _, position := range BOARD_ALL_POSITIONS {
@@ -237,3 +248,13 @@ func (board *Board) PrintSimple() {
 }
 
 type Boards []Board
+
+func (boards1 Boards) Equal(boards2 Boards) bool {
+  for i, board1 := range boards1 {
+    board2 := boards2[i]
+    if !board1.Equal(&board2) {
+      return false
+    }
+  }
+  return true
+}

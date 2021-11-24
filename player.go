@@ -4,11 +4,11 @@ import (
   "math/rand"
 )
 
-type Player func(*Aspect) Move
+type Player func(*Aspect, Aspects) Move
 
 func NewRandomPlayer(random *rand.Rand) Player {
-  result := func(aspect *Aspect) Move {
-    legalMoves := aspect.NewLegalMoves()
+  result := func(aspect *Aspect, history Aspects) Move {
+    legalMoves := aspect.NewLegalMoves(history)
     return legalMoves.RandomChoice(random)
   }
   return result
@@ -16,11 +16,11 @@ func NewRandomPlayer(random *rand.Rand) Player {
 
 type Players map[Turn]Player
 
-func (players Players) OneGame(aspect Aspect) (Aspect, error) {
+func (players Players) OneGame(aspect Aspect, history Aspects) (Aspect, error) {
   var err error
   for {
     player := players[aspect.Turn]
-    move := player(&aspect)
+    move := player(&aspect, history)
     aspect, err = aspect.Put(&move)
     if err != nil {
       return Aspect{}, err
@@ -31,5 +31,5 @@ func (players Players) OneGame(aspect Aspect) (Aspect, error) {
       break
     }
   }
-  return aspect, nil
+  return aspect, , nil
 }

@@ -6,18 +6,31 @@ import(
 
 type Aspect struct {
   Board Board
-  EachTurnCapturedPieceNames EachTurnCapturedPieceNames
+  CapturedPieces CapturedPieces
   Turn Turn
-  History Boards
 }
 
 func NewAspect() Aspect {
-  return Aspect{Board:INIT_BOARD, EachTurnCapturedPieceNames:EachTurnCapturedPieceNames{},
-    Turn:FIRST, History:make(Boards, 0, 255)}
+  return Aspect{Board:INIT_BOARD, CapturedPieces:CapturedPieces{}, Turn:FIRST}
 }
 
-//打ち歩詰めを考慮していない関数
-func (aspect Aspect) newLegalMoves() Moves {
+func (aspect1 *Aspect) Equal(aspect2 *Aspect) bool {
+  board1 := &aspect1.Board
+  board2 := &aspect2.Board
+
+  if !board1.Equal(board2) {
+    return false
+  }
+
+  if !aspect1.CapturedPieces.Equal(aspect2.CapturedPieces) {
+    return false
+  }
+
+  return aspect1.Turn == aspect2.Turn
+}
+
+//打ち歩詰めを考慮していない
+func (aspect Aspect) newLegalMoves(history Aspects) Moves {
   isNihu := aspect.Board.IsNiHu(aspect.Turn)
   handMoveFilter := func(position Position, move *Move) bool {
     pieceName := aspect.Board[position.Row][position.Column].Name
@@ -39,11 +52,11 @@ func (aspect Aspect) newLegalMoves() Moves {
     return true
   }
 
-  capturedPieceNames := aspect.EachTurnCapturedPieceNames[aspect.Turn]
+  selfTurnCapturedPieces := aspect.CapturedPieces[aspect.Turn]
   boardLegalMoves := aspect.Board.NewLegalMoves(aspect.Turn)
-  handLegalMoves := make(Moves, 0, len(capturedPieceNames) * BOARD_ROW_SIZE * BOARD_COLUMN_SIZE)
+  handLegalMoves := make(Moves, 0, len(selfTurnCapturedPieces) * BOARD_ROW_SIZE * BOARD_COLUMN_SIZE)
 
-  for _, pieceName := range capturedPieceNames {
+  for pieceName, _ := range selfTurnCapturedPieces {
     for _, position := range BOARD_ALL_POSITIONS {
       move := Move{PieceName:pieceName, BeforePosition:CAPTURED_PIECE_POSITION, AfterPosition:position}
       if handMoveFilter(position, &move) {
@@ -56,11 +69,7 @@ func (aspect Aspect) newLegalMoves() Moves {
   result := make(Moves, 0, len(handAndBoardLegalMoves))
 
   for _, move := range handAndBoardLegalMoves {
-    nextAspect, err := aspect.Put(&move)
-    if err != nil {
-      panic(err)
-    }
-
+    nextAspect, _ := aspect.Put(&move, history)
     if !nextAspect.Board.IsCheck(aspect.Turn) {
       result = append(result, move)
     }
@@ -68,8 +77,8 @@ func (aspect Aspect) newLegalMoves() Moves {
   return result
 }
 
-func (aspect Aspect) NewLegalMoves() Moves {
-  legalMoves := aspect.newLegalMoves()
+func (aspect Aspect) NewLegalMoves(history Aspects) Moves {
+  legalMoves := aspect.newLegalMoves(history)
   enemyKingHeadPostion := aspect.Board.NewKingHeadPosition(REVERSE_TURN[aspect.Turn])
 
   //相手の玉頭に既に駒が存在する場合は、打ち歩詰めを考慮する必要がないので、処理を終了する
@@ -83,14 +92,9 @@ func (aspect Aspect) NewLegalMoves() Moves {
     isHandMoveHu := positionBeforeMove == CAPTURED_PIECE_POSITION && move.PieceName == HU
 
     if isHandMoveHu && positionBeforeMove == enemyKingHeadPostion {
-      nextAspect, err := aspect.Put(&move)
-
-      if err != nil {
-        panic(err)
-      }
-
+      nextAspect, nextHistory := aspect.Put(&move, history)
       //打ち歩詰めなら
-      if len(nextAspect.newLegalMoves()) == 0 {
+      if len(nextAspect.newLegalMoves(nextHistory)) == 0 {
         continue
       }
     }
@@ -99,18 +103,17 @@ func (aspect Aspect) NewLegalMoves() Moves {
   return result
 }
 
-func (aspect Aspect) Put(move *Move) (Aspect, error) {
+func (aspect Aspect) Put(move *Move, history Aspects) (Aspect, Aspects) {
   positionBeforeMove := move.BeforePosition
   positionAfterMove := move.AfterPosition
   turn := aspect.Turn
-  aspect.EachTurnCapturedPieceNames = aspect.EachTurnCapturedPieceNames.Copy()
+
+  //参照透過を保つためにコピーする
+  capturedPieces := aspect.CapturedPieces.Copy()
+  aspect.CapturedPieces = capturedPieces
 
   if positionBeforeMove.IsCapturedPiece() {
-    capturedPieceNames, err := aspect.EachTurnCapturedPieceNames[turn].Remove(move.PieceName)
-    if err != nil {
-      return Aspect{}, err
-    }
-    aspect.EachTurnCapturedPieceNames[turn] = capturedPieceNames
+    aspect.CapturedPieces[turn][move.PieceName] -= 1
     aspect.Board[positionAfterMove.Row][positionAfterMove.Column] = Piece{Name:move.PieceName, Turn:turn}
   } else {
     movePiece := aspect.Board[positionBeforeMove.Row][positionBeforeMove.Column]
@@ -118,30 +121,92 @@ func (aspect Aspect) Put(move *Move) (Aspect, error) {
     aspect.Board[positionBeforeMove.Row][positionBeforeMove.Column] = Piece{}
 
     if move.IsPromotion {
-      promotionPieceName := PIECE_NAME_TO_PROMOTION_PIECE_NAMES[movePiece.Name]
+      promotionPieceName := PIECE_NAME_TO_PROMOTION_PIECE_NAME[movePiece.Name]
       movePiece.Name = promotionPieceName
     }
     aspect.Board[positionAfterMove.Row][positionAfterMove.Column] = movePiece
 
     if pieceNameOfMovePosition != "" {
-      normalPieceName := PIECE_NAME_TO_NORMAL_PIECE_NAMES[pieceNameOfMovePosition]
-      aspect.EachTurnCapturedPieceNames[turn] = append(aspect.EachTurnCapturedPieceNames[turn], normalPieceName)
+      normalPieceName := PIECE_NAME_TO_NORMAL_PIECE_NAME[pieceNameOfMovePosition]
+      aspect.CapturedPieces[turn][normalPieceName] += 1
     }
   }
 
   aspect.Turn = REVERSE_TURN[turn]
-  aspect.History = append(aspect.History, aspect.Board)
-  return aspect, nil
+  history = append(history, aspect)
+  return aspect, history
 }
 
-func (aspect *Aspect) IsGameEnd() bool {
-  return len(aspect.NewLegalMoves()) == 0
+func (aspect *Aspect) IsRepetitionOfMoves(history Aspects) bool {
+  return history.Count(aspect) == 4
 }
 
-func (aspect *Aspect) IsFirstWin() (bool, error) {
-  if aspect.IsGameEnd() {
+func (aspect *Aspect) IsGameEnd(history Aspects) bool {
+  return len(aspect.NewLegalMoves(history)) == 0 || aspect.IsRepetitionOfMoves(history)
+}
+
+func (aspect *Aspect) IsFirstWin(history Aspects) (bool, error) {
+  if aspect.IsGameEnd(history) {
+    if aspect.IsRepetitionOfMoves(history) {
+      equalFirstIndex := history.EqualFirstIndex(aspect)
+      cutHistory := history[equalFirstIndex:]
+
+      //先手側が連続王手の千日手をされた場合
+      if cutHistory.IsALLCheck(FIRST) {
+        return true, nil
+      } else if cutHistory.IsALLCheck(SECOND) {
+        return false, nil
+      }
+    }
     return aspect.Turn == FIRST, nil
   } else {
     return false, fmt.Errorf("ゲームが終了していない状態でWinnerは求められない")
   }
+}
+
+type Aspects []Aspect
+
+func NewHistory() Aspects {
+  result := make(Aspects, 0, 256)
+  result = append(result, NewAspect())
+  return result
+}
+
+func (aspects Aspects) Count(aspect *Aspect) int {
+  result := 0
+  for _, iAspect := range aspects {
+    if iAspect.Equal(aspect) {
+      result += 1
+    }
+  }
+  return result
+}
+
+func (aspects Aspects) EqualFirstIndex(aspect *Aspect) int {
+  for i, iAspect := range aspects {
+    if iAspect.Equal(aspect) {
+      return i
+    }
+  }
+  return -1
+}
+
+func (aspects Aspects) FilterTurn(turn Turn) Aspects {
+  result := make(Aspects, len(aspects) / 2)
+  for _, aspect := range aspects {
+    if aspect.Turn == turn {
+      result = append(result, aspect)
+    }
+  }
+  return result
+}
+
+func (aspects Aspects) IsALLCheck(turn Turn) bool {
+  cutAspects := aspects.FilterTurn(turn)
+  for _, aspect := range cutAspects {
+    if !aspect.Board.IsCheck(turn) {
+      return false
+    }
+  }
+  return true
 }
