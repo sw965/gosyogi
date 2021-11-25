@@ -17,19 +17,13 @@ func NewRandomPlayer(random *rand.Rand) Player {
 type Players map[Turn]Player
 
 func (players Players) OneGame(aspect Aspect, history Aspects) (Aspect, error) {
-  var err error
   for {
     player := players[aspect.Turn]
     move := player(&aspect, history)
-    aspect, err = aspect.Put(&move)
-    if err != nil {
-      return Aspect{}, err
-    }
-
-    _, err := aspect.IsFirstWin()
-    if err == nil {
+    aspect, history = aspect.Put(&move, history)
+    if aspect.IsGameEnd(history) {
       break
     }
   }
-  return aspect, , nil
+  return aspect, nil
 }

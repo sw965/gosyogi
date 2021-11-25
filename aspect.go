@@ -145,23 +145,23 @@ func (aspect *Aspect) IsGameEnd(history Aspects) bool {
   return len(aspect.NewLegalMoves(history)) == 0 || aspect.IsRepetitionOfMoves(history)
 }
 
-func (aspect *Aspect) IsFirstWin(history Aspects) (bool, error) {
+func (aspect *Aspect) Winner(history Aspects) (Winner, error) {
   if aspect.IsGameEnd(history) {
     if aspect.IsRepetitionOfMoves(history) {
+      //今の局面とまったく同じ局面が一番最初に現れたインデックスを取得する
       equalFirstIndex := history.EqualFirstIndex(aspect)
       cutHistory := history[equalFirstIndex:]
 
-      //先手側が連続王手の千日手をされた場合
+      //先手側が連続王手の千日手をされたならば
       if cutHistory.IsALLCheck(FIRST) {
-        return true, nil
+        return WINNER_P1, nil
       } else if cutHistory.IsALLCheck(SECOND) {
-        return false, nil
+        return WINNER_P2, nil
       }
     }
-    return aspect.Turn == FIRST, nil
-  } else {
-    return false, fmt.Errorf("ゲームが終了していない状態でWinnerは求められない")
+    return DRAW, nil
   }
+  return Winner{}, fmt.Errorf("ゲームが終了していない状態でWinnerは求められない")
 }
 
 type Aspects []Aspect

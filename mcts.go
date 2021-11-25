@@ -73,7 +73,7 @@ func (node *Node) ExpansionWithEvalY(aspect Aspect, history Aspects, eval *Eval,
     node.IsAllExpansion = true
   }
 
-  evalY, err := eval.Func(&aspect)
+  evalY, err := eval.Func(&aspect, history)
   return evalY, selects, err
 }
 
@@ -166,7 +166,6 @@ func RunMCTS(rootAspect Aspect, rootHistory Aspects, simuNum int, X float64, eva
   aspect := rootAspect
   history := rootHistory
   var evalY float64
-  var err error
 
   for i := 0; i < simuNum; i++ {
     node, aspect, history, selects, err := node.Select(aspect, history, X, random)
@@ -175,7 +174,7 @@ func RunMCTS(rootAspect Aspect, rootHistory Aspects, simuNum int, X float64, eva
     }
 
     if aspect.IsGameEnd(history) {
-      evalY, err = eval.Func(&aspect)
+      evalY, err = eval.Func(&aspect, history)
     } else {
       evalY, selects, err = node.ExpansionWithEvalY(aspect, history, eval, selects, random)
     }

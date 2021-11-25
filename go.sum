@@ -1,2 +1,4 @@
 github.com/seehuhn/mt19937 v1.0.0 h1:r02DuVkQXfohssWZO8L/TeAlYOah7aNNubEHB/7Vtfs=
 github.com/seehuhn/mt19937 v1.0.0/go.mod h1:RikyXajNu+1Gqxm4hOacc3ckyWRd0usF6IkE3gnEcAM=
+github.com/sw965/crow v1.0.1 h1:MT/llGgNzRFfxI23Ui/+2gFkSRZLpBoxqqYRs7ktIjs=
+github.com/sw965/crow v1.0.1/go.mod h1:Rj2eHGdmoAl9YZevjqd4nve3PcX/xir4BkvBUyuJefU=
