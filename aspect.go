@@ -10,7 +10,7 @@ type Aspect struct {
   Turn Turn
 }
 
-func NewAspect() Aspect {
+func NewInitAspect() Aspect {
   return Aspect{Board:INIT_BOARD, CapturedPieces:CapturedPieces{}, Turn:FIRST}
 }
 
@@ -56,7 +56,10 @@ func (aspect Aspect) newLegalMoves(history Aspects) Moves {
   boardLegalMoves := aspect.Board.NewLegalMoves(aspect.Turn)
   handLegalMoves := make(Moves, 0, len(selfTurnCapturedPieces) * BOARD_ROW_SIZE * BOARD_COLUMN_SIZE)
 
-  for pieceName, _ := range selfTurnCapturedPieces {
+  for pieceName, count := range selfTurnCapturedPieces {
+    if count == 0 {
+      continue
+    }
     for _, position := range BOARD_ALL_POSITIONS {
       move := Move{PieceName:pieceName, BeforePosition:CAPTURED_PIECE_POSITION, AfterPosition:position}
       if handMoveFilter(position, &move) {
@@ -70,6 +73,7 @@ func (aspect Aspect) newLegalMoves(history Aspects) Moves {
 
   for _, move := range handAndBoardLegalMoves {
     nextAspect, _ := aspect.Put(&move, history)
+    //王手放置や自らが王手されにいくよう手を除外する
     if !nextAspect.Board.IsCheck(aspect.Turn) {
       result = append(result, move)
     }
@@ -93,7 +97,7 @@ func (aspect Aspect) NewLegalMoves(history Aspects) Moves {
 
     if isHandMoveHu && positionBeforeMove == enemyKingHeadPostion {
       nextAspect, nextHistory := aspect.Put(&move, history)
-      //打ち歩詰めなら
+      //打ち歩詰めならば
       if len(nextAspect.newLegalMoves(nextHistory)) == 0 {
         continue
       }
@@ -149,10 +153,11 @@ func (aspect *Aspect) Winner(history Aspects) (Winner, error) {
   if aspect.IsGameEnd(history) {
     if aspect.IsRepetitionOfMoves(history) {
       //今の局面とまったく同じ局面が一番最初に現れたインデックスを取得する
+      //すなわち千日手認定された局面の最初のインデックス
       equalFirstIndex := history.EqualFirstIndex(aspect)
       cutHistory := history[equalFirstIndex:]
 
-      //先手側が連続王手の千日手をされたならば
+      //先手側が連続王手の千日手をされた場合
       if cutHistory.IsALLCheck(FIRST) {
         return WINNER_P1, nil
       } else if cutHistory.IsALLCheck(SECOND) {
@@ -168,7 +173,7 @@ type Aspects []Aspect
 
 func NewHistory() Aspects {
   result := make(Aspects, 0, 256)
-  result = append(result, NewAspect())
+  result = append(result, NewInitAspect())
   return result
 }
 
@@ -191,7 +196,7 @@ func (aspects Aspects) EqualFirstIndex(aspect *Aspect) int {
   return -1
 }
 
-func (aspects Aspects) FilterTurn(turn Turn) Aspects {
+func (aspects Aspects) TurnFilter(turn Turn) Aspects {
   result := make(Aspects, len(aspects) / 2)
   for _, aspect := range aspects {
     if aspect.Turn == turn {
@@ -202,7 +207,7 @@ func (aspects Aspects) FilterTurn(turn Turn) Aspects {
 }
 
 func (aspects Aspects) IsALLCheck(turn Turn) bool {
-  cutAspects := aspects.FilterTurn(turn)
+  cutAspects := aspects.TurnFilter(turn)
   for _, aspect := range cutAspects {
     if !aspect.Board.IsCheck(turn) {
       return false

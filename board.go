@@ -61,6 +61,12 @@ var INIT_BOARD_PIECE_NUM = func() int {
   return result
 }()
 
+func (board *Board) GetPiece(position *Position) Piece {
+  row := position.Row
+  column := position.Column
+  return board[row][column]
+}
+
 func (board1 *Board) Equal(board2 *Board) bool {
   for _, position := range BOARD_ALL_POSITIONS {
     row := position.Row
@@ -124,7 +130,7 @@ func (board *Board) NewKingHeadPosition(turn Turn) Position {
   if turn == FIRST {
     return kingPosition.Add(&RELATIVE_UP_POSITION)
   } else {
-    relativeUpPosition := RELATIVE_UP_POSITION.ReverseTurn()
+    relativeUpPosition := RELATIVE_UP_POSITION.ReversePointOfView()
     return kingPosition.Add(&relativeUpPosition)
   }
 }
@@ -138,7 +144,7 @@ func (board *Board) NewLegalMoves(turn Turn) Moves {
     piece := board[tp.Row][tp.Column]
     byDirectionRelativeMovePositions := *PIECE_NAME_TO_BY_DIRECTION_RELATIVE_MOVE_POSITIONS[piece.Name]
     if turn == SECOND {
-      byDirectionRelativeMovePositions = byDirectionRelativeMovePositions.ReverseTurn()
+      byDirectionRelativeMovePositions = byDirectionRelativeMovePositions.ReversePointOfView()
     }
     for _, bdrmps := range byDirectionRelativeMovePositions.ToSlice() {
       for _, bdrmp := range bdrmps {
@@ -197,7 +203,7 @@ func (board *Board) IsCheck(currentTurn Turn) bool {
     piece := board[rtp.Row][rtp.Column]
     byDirectionRelativeMovePositions := *PIECE_NAME_TO_BY_DIRECTION_RELATIVE_MOVE_POSITIONS[piece.Name]
     if rTurn == SECOND {
-      byDirectionRelativeMovePositions = byDirectionRelativeMovePositions.ReverseTurn()
+      byDirectionRelativeMovePositions = byDirectionRelativeMovePositions.ReversePointOfView()
     }
     for _, bdrmps := range byDirectionRelativeMovePositions.ToSlice() {
       for _, bdrmp := range bdrmps {

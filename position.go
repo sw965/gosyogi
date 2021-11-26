@@ -37,13 +37,37 @@ func (position1 *Position) Add(position2 *Position) Position {
   return Position{Row:row1 + row2, Column:column1 + column2}
 }
 
-func(position *Position) ReverseTurn() Position {
+//先手番から見た駒の動きを後手番から見た駒の動きにする為の関数
+func(position *Position) ReversePointOfView() Position {
   x := position.Row
   y := position.Column
   return Position{Row:x * -1, Column:y * -1}
 }
 
 type Positions []Position
+
+func NewBeforeMovePositions(pieceName PieceName, positionAfterMove *Position, turn Turn) Positions {
+  result := make(Positions, 0)
+
+  byDirectionRelativeMovePositions := PIECE_NAME_TO_BY_DIRECTION_RELATIVE_MOVE_POSITIONS[pieceName]
+
+  if turn == SECOND {
+    tmp := byDirectionRelativeMovePositions.ReversePointOfView()
+    byDirectionRelativeMovePositions = &tmp
+  }
+
+  for _, bdrmps := range byDirectionRelativeMovePositions.ToSlice() {
+    for _, bdrmp := range bdrmps {
+      rPos := bdrmp.ReversePointOfView()
+      positionBeforeMove := positionAfterMove.Add(&rPos)
+      if !positionBeforeMove.IsOutOBoardRange() {
+        result = append(result, positionBeforeMove)
+      }
+    }
+  }
+  result = append(result, CAPTURED_PIECE_POSITION)
+  return result
+}
 
 var BOARD_ALL_POSITIONS = func() Positions {
   result := make(Positions, 0, BOARD_ROW_SIZE * BOARD_COLUMN_SIZE)
@@ -235,10 +259,10 @@ var (
   }()
 )
 
-func (positions Positions) ReverseTurn() Positions {
+func (positions Positions) ReversePointOfView() Positions {
   result := make(Positions, len(positions))
   for i, position := range positions {
-    result[i] = position.ReverseTurn()
+    result[i] = position.ReversePointOfView()
   }
   return result
 }

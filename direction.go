@@ -11,15 +11,15 @@ type ByDirectionPositions struct {
   LeftUp Positions
 }
 
-func (byDirectionPositions ByDirectionPositions) ReverseTurn() ByDirectionPositions {
-  byDirectionPositions.Up = byDirectionPositions.Up.ReverseTurn()
-  byDirectionPositions.RightUp = byDirectionPositions.RightUp.ReverseTurn()
-  byDirectionPositions.Right = byDirectionPositions.Right.ReverseTurn()
-  byDirectionPositions.RightDown = byDirectionPositions.RightDown.ReverseTurn()
-  byDirectionPositions.Down = byDirectionPositions.Down.ReverseTurn()
-  byDirectionPositions.LeftDown = byDirectionPositions.LeftDown.ReverseTurn()
-  byDirectionPositions.Left = byDirectionPositions.Left.ReverseTurn()
-  byDirectionPositions.LeftUp = byDirectionPositions.LeftUp.ReverseTurn()
+func (byDirectionPositions ByDirectionPositions) ReversePointOfView() ByDirectionPositions {
+  byDirectionPositions.Up = byDirectionPositions.Up.ReversePointOfView()
+  byDirectionPositions.RightUp = byDirectionPositions.RightUp.ReversePointOfView()
+  byDirectionPositions.Right = byDirectionPositions.Right.ReversePointOfView()
+  byDirectionPositions.RightDown = byDirectionPositions.RightDown.ReversePointOfView()
+  byDirectionPositions.Down = byDirectionPositions.Down.ReversePointOfView()
+  byDirectionPositions.LeftDown = byDirectionPositions.LeftDown.ReversePointOfView()
+  byDirectionPositions.Left = byDirectionPositions.Left.ReversePointOfView()
+  byDirectionPositions.LeftUp = byDirectionPositions.LeftUp.ReversePointOfView()
   return byDirectionPositions
 }
 
